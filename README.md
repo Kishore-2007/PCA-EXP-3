@@ -7,35 +7,62 @@
 <h1> <align=center> SOBEL EDGE DETECTION FILTER USING CUDA </h3>
 Implement Sobel edge detection filtern using GPU.</h3>
   
-## AIM:
-  The Sobel operator is a popular edge detection method that computes the gradient of the image intensity at each pixel. It uses convolution with two kernels to determine the gradient in both the x and y directions. This lab focuses on utilizing CUDA to parallelize the Sobel filter implementation for efficient processing of images.
+## Background: 
+  - The Sobel operator is a popular edge detection method that computes the gradient of the image intensity at each pixel. It uses convolution with two kernels to determine the gradient in both the x and y directions. 
+  - This lab focuses on utilizing CUDA to parallelize the Sobel filter implementation for efficient processing of images.
 
-Code Overview: You will work with the provided CUDA implementation of the Sobel edge detection filter. The code reads an input image, applies the Sobel filter in parallel on the GPU, and writes the result to an output image.
-## EQUIPMENTS REQUIRED:
-Hardware – PCs with NVIDIA GPU & CUDA NVCC
-Google Colab with NVCC Compiler
-CUDA Toolkit and OpenCV installed.
-A sample image for testing.
+## Aim
+To utilize CUDA to parallelize the Sobel filter implementation for efficient processing of images.
 
-## PROCEDURE:
-Tasks: 
-a. Modify the Kernel:
+## Tools Required:
+- A system with CUDA-capable GPU.
+- CUDA Toolkit and OpenCV installed.
 
-Update the kernel to handle color images by converting them to grayscale before applying the Sobel filter.
-Implement boundary checks to avoid reading out of bounds for pixels on the image edges.
+## Procedure
 
-b. Performance Analysis:
+1. **Environment Setup**:
+   - Ensure that CUDA and OpenCV are installed and set up correctly on your system.
+   - Have a sample image (`images.jpg`) available in the correct directory to use as input.
 
-Measure the performance (execution time) of the Sobel filter with different image sizes (e.g., 256x256, 512x512, 1024x1024).
-Analyze how the block size (e.g., 8x8, 16x16, 32x32) affects the execution time and output quality.
+2. **Load Image and Convert to Grayscale**:
+   - Use OpenCV to read the input image in color mode.
+   - Convert the image to grayscale as the Sobel operator works on single-channel images.
 
-c. Comparison:
+3. **Initialize and Allocate Memory**:
+   - Determine the width and height of the grayscale image.
+   - Allocate memory on both the host (CPU) and device (GPU) for the image data. Allocate device memory using `cudaMalloc` and check for successful allocation with `checkCudaErrors`.
 
-Compare the output of your CUDA Sobel filter with a CPU-based Sobel filter implemented using OpenCV.
-Discuss the differences in execution time and output quality.
+4. **Performance Analysis Function**:
+   - Define `analyzePerformance`, a function to test the CUDA kernel with different image sizes and block configurations.
+   - For each specified image size (e.g., 256x256, 512x512, 1024x1024), set up the grid and block dimensions.
+   - Launch the Sobel kernel using different block sizes (8x8, 16x16, 32x32) to evaluate the performance impact of each configuration. Record the execution time using CUDA events.
 
-## PROGRAM:
-```c
+5. **Run Sobel Filter on Original Image**:
+   - Set up the grid and block dimensions for the input image based on a 16x16 block size.
+   - Use CUDA events to measure execution time for the Sobel filter applied to the original image.
+   - Copy the resulting data from device memory to host memory.
+
+6. **Save CUDA Output Image**:
+   - Convert the processed image data on the host back to an OpenCV `Mat` object.
+   - Save the CUDA-processed output image as `output_sobel_cuda.jpeg`.
+
+7. **Compare with OpenCV Sobel Filter**:
+   - For comparison, apply the OpenCV Sobel filter to the grayscale image on the CPU.
+   - Measure the execution time using `std::chrono` for the CPU-based approach.
+   - Save the OpenCV output as `output_sobel_opencv.jpeg`.
+
+8. **Display Results**:
+   - Print the input and output image dimensions.
+   - Print the execution time for the CUDA Sobel filter and the CPU (OpenCV) Sobel filter to compare performance.
+   - Display the breakdown of times for each block size and image size tested.
+
+9. **Cleanup**:
+   - Free all dynamically allocated memory on the host and device to avoid memory leaks.
+   - Destroy CUDA events created for timing.
+
+## Program
+
+```cpp
 %%writefile sobel_cuda.cu
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,111 +174,43 @@ int main() {
 }
 ```
 
-## OUTPUT:
+## Output Explanation
 
-<img width="794" height="277" alt="image" src="https://github.com/user-attachments/assets/3bf3a80f-51be-467a-8a8e-4b5c8105cde3" />
+| Original 	|  Output using Cuda |
+|:-:	|:-:	|
+| ![creative2](https://github.com/user-attachments/assets/4ebd5792-49d3-4302-8363-0948d56ea11d) | <img width="513" height="401" alt="image" src="https://github.com/user-attachments/assets/d2c51980-937b-4288-9ed7-e97578c7414c" /> |
 
+| Original 	|  Output using OpenCV |
+|:-:	|:-:	|
+| ![creative2](https://github.com/user-attachments/assets/161d1698-49cd-4808-8423-bb55aad3f4fb) | <img width="513" height="338" alt="image" src="https://github.com/user-attachments/assets/969b837c-a34f-45b5-a15b-e9f673de5663" /> |
 
-## RESULT:
-Thus the program has been executed by using CUDA to perform Sobel edge detection on the input image using parallel processing on the GPU.
-
-## QUESTIONS:
-
-#### What challenges did you face while implementing the Sobel filter for color images?
-
-Handling three separate color channels increased memory access and indexing complexity.  
-Converting RGB to grayscale or processing each channel independently added extra computation.
-
-#### How did changing the block size influence the performance of your CUDA implementation?
-
-Larger block sizes improved GPU utilization and reduced kernel launch overhead.  
-However, overly large blocks caused register pressure and lower occupancy, reducing performance.
-
-#### What were the differences in output between the CUDA and CPU implementations? Discuss any discrepancies.
-
-Both versions generated similar edge maps, but small intensity variations appeared due to floating-point rounding and thread execution order.  
-The GPU output sometimes showed slightly sharper edges due to faster parallel convolution.
-
-#### Suggest potential optimizations for improving the performance of the Sobel filter.
-
-Using shared memory to store image tiles reduces global memory access and speeds up convolution.  
-Additional optimizations include using texture memory, loop unrolling, and tuning grid/block dimensions.
-
-## DELIVERABLES:
-
-### **1. Modified CUDA Code (with comments)**
-
-```cpp
-// --- Sobel Edge Detection using CUDA ---
-// Modifications include:
-// 1. Added grayscale conversion for color images.
-// 2. Added kernel launch error checks.
-// 3. Corrected grid/block calculations.
-// 4. Added detailed comments for clarity.
-
-__global__ void sobelFilter(const unsigned char *srcImage, unsigned char *dstImage,
-                            unsigned int width, unsigned int height) {
-
-    int x = blockIdx.x * blockDim.x + threadIdx.x;   // Global x-index
-    int y = blockIdx.y * blockDim.y + threadIdx.y;   // Global y-index
-
-    // Ignore border pixels
-    if (x >= 1 && x < width - 1 && y >= 1 && y < height - 1) {
-
-        // Sobel operator kernels
-        const int Gx[3][3] = { {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1} };
-        const int Gy[3][3] = { { 1, 2, 1}, { 0, 0, 0}, {-1,-2,-1} };
-
-        int sumX = 0, sumY = 0;
-
-        // Convolution operation
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                unsigned char pixel = srcImage[(y + i) * width + (x + j)];
-                sumX += pixel * Gx[i + 1][j + 1];
-                sumY += pixel * Gy[i + 1][j + 1];
-            }
-        }
-
-        // Calculate gradient magnitude
-        int magnitude = sqrtf(sumX * sumX + sumY * sumY);
-        magnitude = min(max(magnitude, 0), 255);
-
-        dstImage[y * width + x] = (unsigned char)magnitude;
-    }
-}
-```
-
-## REPORT SUMMARY:
-
-### **Objective**
-The objective of this experiment was to implement the Sobel edge detection filter using CUDA, analyze the performance of the GPU implementation, and compare it with the traditional CPU implementation. The experiment also aimed to study the influence of block size on execution time and evaluate the quality of outputs produced by both approaches.
-
-### **Key Findings**
-- The CUDA implementation demonstrated significantly faster performance than the CPU version, especially for larger images.
-- Changing block size affected GPU occupancy and kernel execution efficiency, where a block size of 16×16 provided the best balance.
-- CPU and GPU outputs were visually similar, with minor pixel intensity variations due to floating-point precision and thread computation order.
-- CUDA allowed parallel computation of gradient values, resulting in sharper and more precise edges in some cases.
-
-### **Execution Time Graphs**
-*(Insert your generated matplotlib graphs here)*  
-Examples that may be included:
-- **Graph 1:** GPU execution time vs block size (8×8, 16×16, 32×32).  
-- **Graph 2:** CPU vs GPU execution time comparison.
-
-### **Output Comparison**
-- The CUDA output showed slightly sharper edges because of parallel gradient computation.
-- Minor discrepancies were observed due to rounding differences, but overall edge patterns were consistent between CPU and GPU implementations.
-
----
-
-## TOOLS REQUIRED:
+- **Sample Execution Results**:
+  - **CUDA Execution Times (Sobel filter) AND OpenCV Execution Time**
+  </br>
+<img width="1057" height="172" alt="image" src="https://github.com/user-attachments/assets/8e546440-03da-41e9-83f4-8ae2aaf6feaf" />
 
 
-- **NVIDIA GPU** with CUDA support  
-- **CUDA Toolkit (nvcc compiler)**  
-- **OpenCV (C++ or Python)** for reading and writing images  
-- **Google Colab or Local Machine with CUDA-enabled drivers**  
-- **Matplotlib** for graph plotting  
-- **Python 3.x** for visualization and comparisons  
-- **Linux/Ubuntu environment** (recommended for CUDA development)
+- **Graph Analysis**:
+  - Displayed a graph showing the relationship between image size, block size, and execution time.
+ </br>
+
+<img width="585" height="468" alt="image" src="https://github.com/user-attachments/assets/1cf9bb69-5174-4af7-99f7-abb590647d89" />
+
+
+## Answers to Questions
+
+1. **Challenges Implementing Sobel for Color Images**:
+   - Converting images to grayscale in the kernel increased complexity. Memory management and ensuring correct indexing for color to grayscale conversion required attention.
+
+2. **Influence of Block Size**:
+   - Smaller block sizes (e.g., 8x8) were efficient for smaller images but less so for larger ones, where larger blocks (e.g., 32x32) reduced overhead.
+
+3. **CUDA vs. CPU Output Differences**:
+   - The CUDA implementation was faster, with minor variations in edge sharpness due to rounding differences. CPU output took significantly more time than the GPU.
+
+4. **Optimization Suggestions**:
+   - Use shared memory in the CUDA kernel to reduce global memory access times.
+   - Experiment with adaptive block sizes for larger images.
+
+## Result
+Successfully implemented a CUDA-accelerated Sobel filter, demonstrating significant performance improvement over the CPU-based implementation, with an efficient parallelized approach for edge detection in image processing.
